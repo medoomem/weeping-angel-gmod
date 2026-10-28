@@ -17,7 +17,7 @@ local NAMES =
     "weepingangel_feeding", "weepingangel_feeding_step", "weepingangel_feeding_max",
     "weepingangel_double_touch", "weepingangel_double_touch_window",
     "weepingangel_past_filter", "weepingangel_past_filter_time",
-    "weepingangel_darkness", "weepingangel_dark_level", "weepingangel_dark_flashlight",
+    "weepingangel_darkness", "weepingangel_dark_level", "weepingangel_dark_flashlight", "weepingangel_flashlight_cone",
     "weepingangel_flashlight_drain", "weepingangel_flashlight_dist", "weepingangel_flashlight_block",
     "weepingangel_flashlight_blackout",
     "weepingangel_max_range", "weepingangel_tardis_shelter", "weepingangel_tardis_siege", "weepingangel_tardis_knock", "weepingangel_tardis_door_look", "weepingangel_tardis_knock_volume", "weepingangel_tardis_grace",
