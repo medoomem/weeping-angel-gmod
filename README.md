@@ -1,7 +1,7 @@
 # Weeping Angel for Garry's Mod
 
 > **This is not on the Steam Workshop.** I can't publish there because my Steam account is limited. Download it here instead:
-> **[Download the latest release](https://github.com/medoomem/weeping-angel-gmod/releases/latest)** (a `.gma` file you drop into your `addons` folder), or use **Code > Download ZIP** at the top of this page.
+> **[Download the latest release](https://github.com/medoomem/weeping-angel-gmod/releases/latest)**, or use **Code > Download ZIP** at the top of this page.
 
 An edit of the [Weeping Angel (Multiplayer Support!)](https://steamcommunity.com/sharedfiles/filedetails/?id=3618646793) workshop addon. The angel only moves when nobody is looking at it, it freezes when it is seen, and it freezes other angels that see it. If it gets hold of you, it sends you back in time.
 
@@ -9,16 +9,19 @@ I reworked how it sees, hunts and targets players, and added TARDIS mod support.
 
 ## Install
 
-**From the release:** put `weepingangels.gma` in `garrysmod/addons/` and restart the game.
-
-**From the ZIP:** put the `weeping angels` folder in `garrysmod/addons/`. The paths should end up like this:
+1. Download the ZIP (**Code > Download ZIP**, or the zip in Releases) and extract it.
+2. Put the `weeping angels` folder in `garrysmod/addons/`. The paths should end up like this:
 
 ```
 garrysmod/addons/weeping angels/lua/entities/weepingangel/init.lua
 garrysmod/addons/weeping angels/lua/autorun/client/weepingangel_client.lua
 ```
 
-Spawn it from the Entities tab. For a dedicated server, put the same folder (or the `.gma`) in the server's `addons` folder. Clients download the models and materials automatically.
+3. Restart the game and spawn it from the Entities tab.
+
+For a dedicated server, put the same folder in the server's `addons` folder. Players who join download the models and materials automatically.
+
+A `.gma` file is also in Releases. Garry's Mod may not load a `.gma` that you drop straight into `addons`. If it doesn't show up, drag the `.gma` onto `bin/gmad.exe` in your Garry's Mod folder to extract it into a folder, then put that folder in `addons`.
 
 ## Settings
 
