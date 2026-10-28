@@ -71,7 +71,7 @@ Optional. Works with the [TARDIS mod](https://steamcommunity.com/sharedfiles/fil
 | `weepingangel_tardis_knock` | 1 | An angel at the TARDIS door knocks. |
 | `weepingangel_debug` | 0 | Admin debug overlay above each angel. |
 
-The full list is in [CONVARS.md](CONVARS.md).
+The full list is in [COMMANDS.md](COMMANDS.md).
 
 ## Tips
 
