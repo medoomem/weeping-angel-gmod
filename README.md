@@ -22,7 +22,7 @@ Spawn it from the Entities tab. For a dedicated server, put the same folder (or 
 
 ## Settings
 
-Q menu, Utilities tab, **Weeping Angel > Settings**. Everyone can see the values, only superadmins can change them. Changes apply instantly and are saved. Every option is also a console variable, listed in [CONVARS.md](CONVARS.md).
+Q menu, Utilities tab, **Weeping Angel > Settings**. Everyone can see the values, only superadmins can change them. Changes apply instantly and are saved. Every option is also a console variable, listed in [COMMANDS.mdd](COMMANDS.md).
 
 ## Features
 
