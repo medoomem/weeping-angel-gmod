@@ -1,105 +1,92 @@
-# All console variables
+# Weeping Angel for Garry's Mod
 
-Set them in the server console or rcon, for example `weepingangel_speed 300`. They are saved automatically. The same options are in the Q menu under Utilities > Weeping Angel > Settings (superadmins can change them).
+> **This is not on the Steam Workshop.** I can't publish there because my Steam account is limited. Download it here instead:
+> **[Download the latest release](https://github.com/medoomem/weeping-angel-gmod/releases/latest)** (a `.gma` file you drop into your `addons` folder), or use **Code > Download ZIP** at the top of this page.
 
-## Hunting
+An edit of the [Weeping Angel (Multiplayer Support!)](https://steamcommunity.com/sharedfiles/filedetails/?id=3618646793) workshop addon. The angel only moves when nobody is looking at it, it freezes when it is seen, and it freezes other angels that see it. If it gets hold of you, it sends you back in time.
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_speed` | 400 | Full speed of the angel in units per second while unobserved (player run speed is about 400). |
-| `weepingangel_patience` | 25 | Seconds of unobserved haunting before the angel is ready to strike. Randomised by about 30% per angel. |
-| `weepingangel_allow_touch` | 1 | 0 = angels only scare and never touch you. 1 = they eventually strike. |
-| `weepingangel_touch_mode` | 0 | 0 = a touch sends you back in time (teleport). 1 = a touch kills. |
-| `weepingangel_instant_move` | 1 | 1 = the angel moves the moment nobody is looking, with no cooldowns. |
-| `weepingangel_smart_target` | 1 | 1 = with several players, the target is picked by distance, who looked away most recently and who was scared least recently. |
-| `weepingangel_lag_comp` | 1 | 1 = the visibility cone grows with camera turn speed and ping, so you do not see it move during fast turns or lag. |
-| `weepingangel_fit_space` | 1 | 1 = teleport distances shrink to the size of the room, and the angel keeps off walls and props. |
-| `weepingangel_max_range` | 4000 | An angel can only teleport to a player within this many units (0 = no limit). |
+I reworked how it sees, hunts and targets players, and added TARDIS mod support. I made this to hand back to the original authors. If you made the original and want these changes, take them. Everyone else: if you post this on the Workshop, credit the people listed under Credits and link their page.
 
-## Scares
+## Install
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_scares` | 1 | 1 = angels sometimes appear very close behind you with their hands out. |
-| `weepingangel_scare_scale` | 1 | Multiplier for the delay between scares (0.1 = very frequent, handy for testing). |
+**From the release:** put `weepingangels.gma` in `garrysmod/addons/` and restart the game.
 
-## World
+**From the ZIP:** put the `weeping angels` folder in `garrysmod/addons/`. The paths should end up like this:
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_angel_lock` | 1 | 1 = angels freeze each other when they can see each other. |
-| `weepingangel_bots_see` | 0 | 1 = bots count as observers and targets. Off by default because bots stare at nothing and would freeze the angels. |
-| `weepingangel_lights` | 1 | 1 = angels flicker and blow out nearby lights. |
-| `weepingangel_breadcrumbs` | 1 | 1 = angels follow footsteps around corners. |
-| `weepingangel_move_sounds` | 0 | 1 = faint stone grinding sound when the angel moves. |
-| `weepingangel_aspect` | 1.7778 | Widest screen aspect ratio among your players (16:9 = 1.7778, 21:9 = 2.3333, 32:9 = 3.5556). Widens the "can see" cone. |
+```
+garrysmod/addons/weeping angels/lua/entities/weepingangel/init.lua
+garrysmod/addons/weeping angels/lua/autorun/client/weepingangel_client.lua
+```
 
-## Dormant statues (applies to angels spawned after the change)
+Spawn it from the Entities tab. For a dedicated server, put the same folder (or the `.gma`) in the server's `addons` folder. Clients download the models and materials automatically.
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_dormant` | 0 | 1 = new angels spawn as still statues until they wake. |
-| `weepingangel_dormant_wake_dist` | 500 | A dormant angel wakes when a player comes within this many units. |
-| `weepingangel_dormant_wake_time` | 0 | A dormant angel also wakes by itself after this many seconds (0 = never). |
+## Settings
 
-## Feeding
+Q menu, Utilities tab, **Weeping Angel > Settings**. Everyone can see the values, only superadmins can change them. Changes apply instantly and are saved. Every option is also a console variable, listed in [CONVARS.md](CONVARS.md).
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_feeding` | 0 | 1 = every successful touch makes that angel hungrier (faster tension, longer light draining reach). |
-| `weepingangel_feeding_step` | 0.15 | How much shorter its patience gets per touch (0.15 = 15%, stacking). |
-| `weepingangel_feeding_max` | 5 | Maximum number of touches an angel remembers. |
+## Features
 
-## Double touch
+- **Quantum lock.** The angel only moves while no player can see it. Visibility uses each player's real field of view (widescreen and zoom included), line of sight and walls.
+- **Angels lock each other.** Angels that can see each other freeze, as in "Blink".
+- **Hunting.** It picks a player, follows their footsteps around corners and gets closer every time you look away. When its patience runs out it strikes.
+- **Instant movement.** The moment you stop looking, it moves. No cooldowns, no safe window after a blink.
+- **Scares.** Now and then it appears right behind you with its hands out.
+- **Time travel touch.** A touch sends you to another spot on the map with a sepia filter. Optionally the touch kills.
+- **Multiplayer targeting.** Picks a target by distance, who looked away from it most recently, and who it has not scared lately. Angels avoid piling onto the same victim.
+- **Lag compensation.** The visibility cone grows with camera turn speed and ping, so fast turns and lag never show it moving.
+- **Room fitting.** Teleport distances shrink to the room you are in and it keeps a gap from walls and props.
+- **Flashlight blink.** A close angel makes your flashlight blink slowly and then blows it out. Optional screen blackout on each blink.
+- **Light draining.** Nearby lights flicker and blow out.
+- **Darkness (experimental).** An angel standing in the dark cannot be seen, so it moves freely there. Your flashlight lights up what it points at.
+- **Dormant statues.** Angels can spawn as still statues that wake when a player gets close or after a set time.
+- **Feeding and double touch.** Each touch makes an angel hungrier. A second touch soon after the first can be lethal.
+- **Sonic Screwdriver.** With the Sonic Screwdriver SWEP, primary fire locks an angel in time and secondary fire releases it.
+- **Protection.** Angels cannot be grabbed with the physgun or gravity gun, unfrozen, or hit with tools.
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_double_touch` | 0 | 1 = a second touch soon after the first kills the victim. |
-| `weepingangel_double_touch_window` | 90 | Seconds after a touch during which the next touch is lethal. |
+## TARDIS mod support
 
-## Past-era filter
+Optional. Works with the [TARDIS mod](https://steamcommunity.com/sharedfiles/filedetails/?id=307175678). Without it the angels behave as normal.
+
+- **Shelter.** Players inside a TARDIS are left alone. Mode 1 protects while the shields are on, mode 2 protects inside any TARDIS, mode 0 turns it off.
+- **Waiting at the door.** With nobody else to hunt, angels walk to the TARDIS door and wait. Several angels line up in a curve around it.
+- **Knocking.** One angel per TARDIS knocks using the mod's own sounds. If the TARDIS is locked it pounds on the door and the interior shakes.
+- **Open door rule.** With the door open, angels outside only freeze while someone inside is looking at the doorway.
+- **Following in.** An angel can only follow you in through a closed door, and not right after you step in. You get a few seconds of grace after leaving where it cannot touch you.
+
+## Main console variables
 
 | Variable | Default | What it does |
 | --- | --- | --- |
-| `weepingangel_past_filter` | 1 | 1 = sepia filter after being cast back in time. |
-| `weepingangel_past_filter_time` | 8 | How many seconds the filter lasts. |
+| `weepingangel_speed` | 400 | Angel speed in units per second while unobserved. |
+| `weepingangel_patience` | 25 | Seconds of haunting before it strikes. |
+| `weepingangel_allow_touch` | 1 | 0 = scares only, never touches. |
+| `weepingangel_touch_mode` | 0 | 0 = touch sends you back in time. 1 = touch kills. |
+| `weepingangel_max_range` | 4000 | Max distance it can teleport to a player (0 = unlimited). |
+| `weepingangel_angel_lock` | 1 | Angels freeze each other. |
+| `weepingangel_aspect` | 1.7778 | Widest player screen ratio (21:9 = 2.3333, 32:9 = 3.5556). |
+| `weepingangel_dormant` | 0 | New angels spawn as dormant statues. |
+| `weepingangel_flashlight_drain` | 1 | Angels blink and blow out your flashlight. |
+| `weepingangel_darkness` | 0 | Angels in the dark cannot be seen (experimental). |
+| `weepingangel_tardis_shelter` | 1 | 0 = off, 1 = safe with shields on, 2 = safe in any TARDIS. |
+| `weepingangel_tardis_knock` | 1 | An angel at the TARDIS door knocks. |
+| `weepingangel_debug` | 0 | Admin debug overlay above each angel. |
 
-## Flashlight blink
+The full list is in [CONVARS.md](CONVARS.md).
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_flashlight_drain` | 1 | 1 = a close angel can make your flashlight blink slowly and then blow it out. |
-| `weepingangel_flashlight_dist` | 450 | How close the angel has to be to start (units). |
-| `weepingangel_flashlight_block` | 5 | Seconds the flashlight stays dead after it is blown out. |
-| `weepingangel_flashlight_blackout` | 0 | 1 = the whole screen goes black with every blink. |
+## Tips
 
-## TARDIS mod
+- `weepingangel_scare_scale 0.1` makes scares frequent for testing.
+- On an ultrawide? Set `weepingangel_aspect` to the widest ratio among your players.
+- The darkness option depends on map lighting. Tune `weepingangel_dark_level` with the debug overlay on.
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_tardis_shelter` | 1 | 0 = ignore the TARDIS mod. 1 = safe inside a TARDIS whose shields are on. 2 = safe inside any TARDIS. |
-| `weepingangel_tardis_siege` | 3000 | Angels with nobody else to hunt wait at the door of a TARDIS within this many units (0 = off). |
-| `weepingangel_tardis_knock` | 1 | 1 = one angel per TARDIS knocks on the door. Pounds on it if it is locked. |
-| `weepingangel_tardis_knock_volume` | 0.7 | How loud the knocking and pounding is (1 = full). Also scales the screen shake inside. |
-| `weepingangel_tardis_door_look` | 1 | 1 = an open door only freezes angels outside while someone inside is looking through it. 0 = anyone inside with the door open counts as watching. |
-| `weepingangel_tardis_grace` | 8 | Seconds after leaving a TARDIS during which angels cannot touch you (they can still move and scare you). |
+## Credits
 
-## Darkness (experimental)
+- Original Weeping Angel addon: Doctor, holy holy goldy (GoldyTX), CyberNovaDW
+- Earlier addons it builds on: Mr.blue, TSEG, Doctor amigos
+- Angel model and textures: The Sniper 9
+- TARDIS mod: AmyJeanes and contributors
+- Weeping Angels created by Steven Moffat for Doctor Who. Fan made, not affiliated with the BBC.
 
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_darkness` | 0 | 1 = a player cannot see an angel standing in the dark, so it moves freely there. |
-| `weepingangel_dark_level` | 0.009 | Light level (0 to 1) below which an angel counts as standing in the dark. The debug overlay shows the measured value, so tune it per map. |
-| `weepingangel_dark_flashlight` | 1 | 1 = your flashlight lights up an angel it points at, so you can still see it in the dark. |
+Original Workshop page: https://steamcommunity.com/sharedfiles/filedetails/?id=3618646793
 
-## Debug
-
-| Variable | Default | What it does |
-| --- | --- | --- |
-| `weepingangel_debug` | 0 | 1 = shows the debug overlay to admins and prints each angel's state to the server console once per second. |
-
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `weepingangel_tardis_info` | Admin only. Stand inside a TARDIS and run it. Prints what the addon can read from the TARDIS mod (door, doorway, shields, sheltered or not) and the state of every nearby angel. Include the output in bug reports. |
+Bugs and suggestions: open an issue on this repository.
