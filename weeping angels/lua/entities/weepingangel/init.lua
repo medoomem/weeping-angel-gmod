@@ -175,7 +175,7 @@ local THINK_DELAY        = 0.05   -- how often we check for observers (20 Hz)
 local SEEN_GRACE         = 0.15   -- stay frozen this long after last being seen (hides latency)
 local MAX_STEP_DT        = 0.2    -- clamp for movement delta time
 
-local VIEW_MARGIN_DEG    = 3     -- extra degrees added to the player's FOV cone
+local VIEW_MARGIN_DEG    = 12     -- extra degrees added to the player's FOV cone
 local ANGEL_SIGHT_DIST   = 3000
 local ANGEL_COS          = math.cos( math.rad( 60 ) )
 
@@ -1113,9 +1113,24 @@ function ENT:ContactDist()
     return self.HullMaxs.x + PLAYER_RADIUS + TOUCH_GAP
 end
 
+-- The TARDIS exterior to watch while the victim is inside one and this angel is out in the world
+-- (the victim's body is then in the interior room, somewhere else on the map). nil otherwise.
+function ENT:OutsideTardisOf( victim )
+    victim = victim or self.Victim
+    local ext = TardisOf( victim )
+    if not ext then return nil end
+
+    local int = InteriorOf( victim )
+    if int and self:GetPos():Distance( int:GetPos() ) <= InteriorRadius( int ) then return nil end
+
+    return ext
+end
+
 function ENT:FaceVictim()
     if not IsValid( self.Victim ) then return end
-    local d = self.Victim:GetPos() - self:GetPos()
+
+    local ext = self:OutsideTardisOf()
+    local d = ( ext and TardisDoorPos( ext ) or self.Victim:GetPos() ) - self:GetPos()
     d.z = 0
     if d:LengthSqr() < 1 then return end
     self:SetAngles( Angle( 0, d:Angle().yaw + MODEL_YAW_OFFSET, 0 ) )
@@ -1485,17 +1500,19 @@ end
 
 -- No victim, but a player is sheltered in a TARDIS nearby: go and stand in front of its door.
 -- Moves only while unobserved, like everything else. Returns true if this angel is busy with that.
-function ENT:TardisSiege( now, dt )
+function ENT:TardisSiege( now, dt, forced )
     local range = cvTardisSiege:GetFloat()
-    if range <= 0 then self.SiegeStatus = "off (range 0)" return false end
+    if not forced and range <= 0 then self.SiegeStatus = "off (range 0)" return false end
     if self.Dormant then self.SiegeStatus = "dormant" return false end
 
     local myPos = self:GetPos()
     local target, bestD
     local sheltered = 0
 
+    if IsValid( forced ) then target = forced end
+
     for _, ply in ipairs( player.GetAll() ) do
-        if ply.WAShelter then
+        if not target and ply.WAShelter then
             sheltered = sheltered + 1
             local ext = TardisOf( ply )
 
@@ -2412,6 +2429,13 @@ end
 function ENT:Stalk( dt )
     local now    = CurTime()
     local victim = self.Victim
+
+    -- victim is inside a TARDIS and this angel cannot follow in right now (door open, or they just stepped in):
+    -- walk to the door and watch it, instead of heading for the interior room far away on the map
+    local ext = self:OutsideTardisOf( victim )
+    if ext and not self:InTeleportRange() then
+        if self:TardisSiege( now, dt, ext ) then return end
+    end
 
     local to = victim:GetPos() - self:GetPos()
     local dz = math.abs( to.z )
