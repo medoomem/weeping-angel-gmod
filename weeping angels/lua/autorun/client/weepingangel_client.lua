@@ -41,7 +41,7 @@ end )
 -- so it can move even while you face it. Your flashlight lights it if you point it there.
 -- Use weepingangel_debug 1 to see the measured light value above each angel.
 -- --------------------------------------------------------
-timer.Create( "WeepingAngel_LightReport", 0.2, 0, function()
+timer.Create( "WeepingAngel_LightReport", 0.1, 0, function()
     local lp = LocalPlayer()
     if not IsValid( lp ) or not lp:Alive() then return end
 
@@ -57,6 +57,9 @@ timer.Create( "WeepingAngel_LightReport", 0.2, 0, function()
     local fwd    = lp:EyeAngles():Forward()
     local report = {}
 
+    local cvCone = GetConVar( "weepingangel_flashlight_cone" )
+    local coneCos = math.cos( math.rad( cvCone and cvCone:GetFloat() or 23 ) )
+
     for _, ent in ipairs( ents.FindByClass( "weepingangel" ) ) do
         local mid = ent:LocalToWorld( ent:OBBCenter() )
         local d   = eye:Distance( mid )
@@ -67,12 +70,21 @@ timer.Create( "WeepingAngel_LightReport", 0.2, 0, function()
             local lit    = bright >= level
             local amb    = not lit      -- dark by itself, before the flashlight is considered
 
-            -- flashlight: it must point at the angel with nothing in between.
-            -- Up close the angel's centre is far below your crosshair, so the cone is much wider there.
-            local cone = ( d < 250 ) and 0.45 or 0.85
-            if not lit and flashOn and d < 900 and d > 1 and ( ( mid - eye ) / d ):Dot( fwd ) > cone then
-                local tr = util.TraceLine( { start = eye, endpos = mid, filter = lp, mask = MASK_OPAQUE } )
-                if not tr.Hit or tr.Entity == ent then lit = true end
+            -- flashlight: the angel is lit while its feet, chest or head is inside the beam's cone
+            -- (weepingangel_flashlight_cone, the same value the server uses) with nothing in between
+            if not lit and flashOn and d < 900 then
+                local base = ent:GetPos()
+
+                for _, h in ipairs( { 4, 36, 68 } ) do
+                    local p  = base + Vector( 0, 0, h )
+                    local to = p - eye
+                    local pd = to:Length()
+
+                    if pd > 1 and to:Dot( fwd ) / pd >= coneCos then
+                        local tr = util.TraceLine( { start = eye, endpos = p, filter = lp, mask = MASK_OPAQUE } )
+                        if not tr.Hit or tr.Entity == ent then lit = true break end
+                    end
+                end
             end
 
             ent.WALight = bright   -- shown by the debug overlay
@@ -162,6 +174,7 @@ local SECTIONS =
         { "weepingangel_darkness",       "Can't see angels standing in the dark", "bool" },
         { "weepingangel_dark_level",     "Darkness threshold (see debug overlay)", "num", 0, 1, 3, 0.06 },
         { "weepingangel_dark_flashlight", "Flashlight lights angels",              "bool" },
+        { "weepingangel_flashlight_cone", "Flashlight light cone (degrees)", "num", 10, 60, 0, 23 },
     } },
     { "Debug", {
         { "weepingangel_debug", "Debug overlay and console output",           "bool" },
