@@ -75,6 +75,8 @@ local cvDarkLevel  = CreateConVar( "weepingangel_dark_level", "0.009", FCVAR_ARC
     "Light level (0-1) below which an angel counts as standing in the dark. The debug overlay shows the measured value.", 0, 1 )
 local cvDarkFlash  = CreateConVar( "weepingangel_dark_flashlight", "1", FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED,
     "1 = your flashlight lights an angel it points at, so you still see it in the dark.", 0, 1 )
+local cvFlashCone  = CreateConVar( "weepingangel_flashlight_cone", "23", FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED,
+    "How wide your flashlight lights things, as a half-angle in degrees. The angel counts as lit (seen) only while it is inside this cone. Raise it if it moves while the beam's edge still touches it, lower it if it stays frozen with the light clearly off it.", 10, 60 )
 
 util.AddNetworkString( "WeepingAngel_Light" )
 
@@ -151,7 +153,7 @@ net.Receive( "WeepingAngel_Light", function( _, ply )
 
     local now = CurTime()
     if ( ply.WALightNext or 0 ) > now then return end
-    ply.WALightNext = now + 0.1
+    ply.WALightNext = now + 0.05
 
     for _ = 1, net.ReadUInt( 5 ) do
         local ent  = Entity( net.ReadUInt( 16 ) )
@@ -175,7 +177,7 @@ local THINK_DELAY        = 0.05   -- how often we check for observers (20 Hz)
 local SEEN_GRACE         = 0.15   -- stay frozen this long after last being seen (hides latency)
 local MAX_STEP_DT        = 0.2    -- clamp for movement delta time
 
-local VIEW_MARGIN_DEG    = 12     -- extra degrees added to the player's FOV cone
+local VIEW_MARGIN_DEG    = 3     -- extra degrees added to the player's FOV cone
 local ANGEL_SIGHT_DIST   = 3000
 local ANGEL_COS          = math.cos( math.rad( 60 ) )
 
@@ -2808,6 +2810,37 @@ function ENT:DrainFlashlights( now )
     end
 end
 
+-- Is this position lit by the player's flashlight right now? (server side, live view)
+-- The angel counts as lit while its feet, chest or head is inside the beam's cone (weepingangel_flashlight_cone,
+-- widened by the lag allowance), with nothing in the way. Outside the beam it is dark and may move.
+local function FlashlightOnAngel( ply, pos )
+    if not cvDarkFlash:GetBool() or not ply:FlashlightIsOn() then return false end
+
+    local eye   = ply:EyePos()
+    local fwd   = ply:EyeAngles():Forward()
+    local extra = cvLag:GetBool() and ( ply.WAViewExtra or 0 ) or 0
+    local limit = math.cos( math.rad( math.min( cvFlashCone:GetFloat() + extra, 110 ) ) )
+
+    for _, h in ipairs( { 4, 36, 68 } ) do
+        local p  = pos + Vector( 0, 0, h )
+        local to = p - eye
+        local d  = to:Length()
+
+        if d < 1 then return true end
+
+        if d <= 1000 then
+            to:Mul( 1 / d )
+
+            if to:Dot( fwd ) >= limit then
+                local tr = util.TraceLine( { start = eye, endpos = p, filter = ply, mask = MASK_OPAQUE } )
+                if not tr.Hit or ( IsValid( tr.Entity ) and tr.Entity:GetClass() == "weepingangel" ) then return true end
+            end
+        end
+    end
+
+    return false
+end
+
 -- Darkness: is this angel standing in the dark, as far as this player can tell?
 -- Based on the player's own latest report (fresh within 0.8 s), and only for positions
 -- close to where it was measured. Anything else is judged by the normal view rules.
@@ -2817,6 +2850,11 @@ function ENT:IsDarkFor( ply, pos )
 
     if not r or not r.dark then return false end
     if CurTime() - r.t > 0.8 then return false end
+
+    -- The player's own flashlight is judged here too, using their live view. The client report is up to a
+    -- fraction of a second old, so on its own it would still say "dark" for a moment after the beam
+    -- swings onto the angel (it would vanish in front of you). This cone is wider than the client's.
+    if FlashlightOnAngel( ply, pos ) then return false end
 
     return pos:DistToSqr( r.pos ) <= DARK_STEP_RADIUS * DARK_STEP_RADIUS
 end
