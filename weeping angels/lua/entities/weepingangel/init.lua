@@ -75,7 +75,7 @@ local cvDarkLevel  = CreateConVar( "weepingangel_dark_level", "0.009", FCVAR_ARC
     "Light level (0-1) below which an angel counts as standing in the dark. The debug overlay shows the measured value.", 0, 1 )
 local cvDarkFlash  = CreateConVar( "weepingangel_dark_flashlight", "1", FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED,
     "1 = your flashlight lights an angel it points at, so you still see it in the dark.", 0, 1 )
-local cvFlashCone  = CreateConVar( "weepingangel_flashlight_cone", "23", FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED,
+local cvFlashCone  = CreateConVar( "weepingangel_flashlight_cone", "20", FCVAR_ARCHIVE + FCVAR_NOTIFY + FCVAR_REPLICATED,
     "How wide your flashlight lights things, as a half-angle in degrees. The angel counts as lit (seen) only while it is inside this cone. Raise it if it moves while the beam's edge still touches it, lower it if it stays frozen with the light clearly off it.", 10, 60 )
 
 util.AddNetworkString( "WeepingAngel_Light" )
@@ -85,7 +85,7 @@ local cvFlashDrain = CreateConVar( "weepingangel_flashlight_drain", "1", FCVAR_A
     "1 = an angel near you can make your flashlight blink slowly a few times, then blow it out (like it is trying to free itself).", 0, 1 )
 local cvFlashDist  = CreateConVar( "weepingangel_flashlight_dist", "450", FCVAR_ARCHIVE + FCVAR_NOTIFY,
     "How close an angel must be to start draining your flashlight (units).", 100, 2000 )
-local cvFlashBlock = CreateConVar( "weepingangel_flashlight_block", "5", FCVAR_ARCHIVE + FCVAR_NOTIFY,
+local cvFlashBlock = CreateConVar( "weepingangel_flashlight_block", "2", FCVAR_ARCHIVE + FCVAR_NOTIFY,
     "Seconds your flashlight stays dead after it is blown out.", 1, 300 )
 local cvFlashBlackout = CreateConVar( "weepingangel_flashlight_blackout", "0", FCVAR_ARCHIVE + FCVAR_NOTIFY,
     "1 = the whole screen goes black with every flashlight blink (hides the angel's moves on maps where the darkness threshold is hard to tune).", 0, 1 )
@@ -120,7 +120,7 @@ local cvTardisGrace = CreateConVar( "weepingangel_tardis_grace", "8", FCVAR_ARCH
 local FLASH =
 {
     MIN_AGE       = 5,     -- seconds after the angel spawned/woke before it may blink lights (tension is NOT needed: it only builds while unseen)
-    COOLDOWN_MIN  = 10,     -- pause before the same player can be blinked again (after the light came back)
+    COOLDOWN_MIN  = 4,     -- pause before the same player can be blinked again (after the light came back)
     COOLDOWN_MAX  = 20,
     FIRST_DARK_MIN = 1.5,     -- timer before the first blink when the angel stands in real darkness
     FIRST_DARK_MAX = 4,
@@ -128,10 +128,10 @@ local FLASH =
     FIRST_LIT_MAX = 3,
     BLINKS_MIN    = 2,      -- how many times the light goes out before it is blown
     BLINKS_MAX    = 4,
-    DARK_MIN      = 0.9,    -- how long each blink stays dark
-    DARK_MAX      = 1.4,
-    LIGHT_MIN     = 1.1,    -- how long the light stays on between blinks
-    LIGHT_MAX     = 2.0,
+    DARK_MIN      = 0.5,    -- how long each blink stays dark
+    DARK_MAX      = 0.9,
+    LIGHT_MIN     = 0.6,    -- how long the light stays on between blinks
+    LIGHT_MAX     = 1.0,
     ACTION_DELAY  = 0.3,    -- the angel acts this long after the light went out (client has gone dark)
     ON_MARGIN     = 0.5,    -- the light returns at least this long after the angel finished moving
     OFF_WAIT      = 2,      -- flashlight off this long in the dark -> it comes to the front
@@ -177,7 +177,7 @@ local THINK_DELAY        = 0.05   -- how often we check for observers (20 Hz)
 local SEEN_GRACE         = 0.15   -- stay frozen this long after last being seen (hides latency)
 local MAX_STEP_DT        = 0.2    -- clamp for movement delta time
 
-local VIEW_MARGIN_DEG    = 3     -- extra degrees added to the player's FOV cone
+local VIEW_MARGIN_DEG    = 1     -- extra degrees added to the player's FOV cone
 local ANGEL_SIGHT_DIST   = 3000
 local ANGEL_COS          = math.cos( math.rad( 60 ) )
 
@@ -2289,6 +2289,9 @@ function ENT:StalkHaunt( dt, now, to, flat )
     elseif self.ScareState == "seen" then
         if self.RetreatAt == 0 then self.RetreatAt = now + math.Rand( 1.5, 3 ) end
 
+        -- it lost sight of you (you looked away, or switched the flashlight off in the dark): it goes at once
+        if self.InstantMove then self.RetreatAt = now end
+
         if now >= self.RetreatAt then
             if not self:EndScare( now, hold ) and now > self.RetreatAt + 8 then
                 self.ScareState = nil
@@ -2612,9 +2615,17 @@ function ENT:FlashStep( ply, st )
         end
     else
         -- it reappears closer, in front of the player
-        local dist = Lerp( ( st.step - 1 ) / ( st.nBlinks + 1 ), FLASH.STEP_FAR, FLASH.STEP_NEAR )
-                   * math.Rand( 1 - FLASH.STEP_JITTER, 1 + FLASH.STEP_JITTER )
-        self:PlaceNear( ply, 0, dist, true )
+        -- steps 2..nBlinks walk from STEP_FAR down to STEP_NEAR, so the LAST blink's step lands at STEP_NEAR
+        -- (more blinks = more, smaller steps; the final reveal then comes from right there)
+        local fronts = st.nBlinks - 1
+        local frac   = fronts <= 1 and 1 or ( st.step - 2 ) / ( fronts - 1 )
+        local dist   = Lerp( math.Clamp( frac, 0, 1 ), FLASH.STEP_FAR, FLASH.STEP_NEAR )
+                     * math.Rand( 1 - FLASH.STEP_JITTER, 1 + FLASH.STEP_JITTER )
+
+        -- if that spot is blocked, try nearer ones rather than staying where it was
+        if not self:PlaceNear( ply, 0, dist, true ) then
+            if not self:PlaceNear( ply, 0, dist * 0.7, true ) then self:PlaceNear( ply, 180, dist * 0.7, true ) end
+        end
     end
 
     self:ChangePoseNow()
@@ -2624,14 +2635,23 @@ end
 -- It then holds there like a close-range scare until the player has seen it.
 function ENT:FlashReveal( ply, now, holdUntil )
     local front = math.random() < 0.65
-    local dist  = math.Rand( FLASH.REVEAL_MIN, FLASH.REVEAL_MAX )
+    -- never closer than the two bodies can stand (REVEAL_MIN below that made placing fail and left it far away)
+    local dist  = math.max( math.Rand( FLASH.REVEAL_MIN, FLASH.REVEAL_MAX ), self:ContactDist() + 12 )
 
     local ok = self:PlaceNear( ply, front and 0 or 180, dist, true )
             or self:PlaceNear( ply, front and 180 or 0, dist, true )
 
+    -- tight spot (wall, props): accept a little further rather than not showing up at all
+    if not ok then ok = self:PlaceNear( ply, 0, dist * 1.6, true ) or self:PlaceNear( ply, 180, dist * 1.6, true ) end
+
     if not ok then return false end
 
     self:SetPose( SCARE_POSE )
+
+    -- the blink sequence leaves "lost sight" set from the moments the beam was on it; without this the
+    -- scare code thinks you just looked away and sends it off again the same tick
+    self.LostSight   = false
+    self.InstantMove = false
 
     self.ScareState   = "seen"      -- handled by the existing scare code: holds, then slinks away
     self.RetreatAt    = holdUntil
@@ -2813,13 +2833,19 @@ end
 -- Is this position lit by the player's flashlight right now? (server side, live view)
 -- The angel counts as lit while its feet, chest or head is inside the beam's cone (weepingangel_flashlight_cone,
 -- widened by the lag allowance), with nothing in the way. Outside the beam it is dark and may move.
+-- Up close the beam's rim spill lights things a bit off the centre line, so the cone grows as the angel gets nearer:
+-- normal size at `far` units and beyond, easing up to `max` degrees (total half-angle) at `near` units and closer.
+-- Keep this small: too big and the angel stays frozen at scare range while the light is clearly not on it.
+-- (the same three numbers are at the top of weepingangel_client.lua)
+local FLASH_NEAR = { far = 180, near = 70, max = 110 }
+local FLASH_BODY_RADIUS = 22   -- about half the angel's width; widens the beam test the closer the angel is
+
 local function FlashlightOnAngel( ply, pos )
     if not cvDarkFlash:GetBool() or not ply:FlashlightIsOn() then return false end
 
     local eye   = ply:EyePos()
     local fwd   = ply:EyeAngles():Forward()
     local extra = cvLag:GetBool() and ( ply.WAViewExtra or 0 ) or 0
-    local limit = math.cos( math.rad( math.min( cvFlashCone:GetFloat() + extra, 110 ) ) )
 
     for _, h in ipairs( { 4, 36, 68 } ) do
         local p  = pos + Vector( 0, 0, h )
@@ -2831,7 +2857,14 @@ local function FlashlightOnAngel( ply, pos )
         if d <= 1000 then
             to:Mul( 1 / d )
 
-            if to:Dot( fwd ) >= limit then
+            -- the angel is a body, not a point: up close its sides reach well outside the beam's centre line
+            local half = cvFlashCone:GetFloat() + extra + math.deg( math.atan( FLASH_BODY_RADIUS / d ) )
+
+            -- closer = wider (cubic ease: almost nothing at `far`, steep when it is right next to you)
+            local t = math.Clamp( ( FLASH_NEAR.far - d ) / ( FLASH_NEAR.far - FLASH_NEAR.near ), 0, 1 )
+            half = math.min( half + math.max( 0, FLASH_NEAR.max - half ) * t * t * t, math.max( half, FLASH_NEAR.max ) )
+
+            if to:Dot( fwd ) >= math.cos( math.rad( half ) ) then
                 local tr = util.TraceLine( { start = eye, endpos = p, filter = ply, mask = MASK_OPAQUE } )
                 if not tr.Hit or ( IsValid( tr.Entity ) and tr.Entity:GetClass() == "weepingangel" ) then return true end
             end
@@ -3158,18 +3191,19 @@ hook.Add( "Think", "WeepingAngel_ViewSpeed", function()
         ply.WAPrevAngT = now
 
         local dt = now - pt
+        local speed = 0
         if prev and dt > 0.001 then
             local dy = math.abs( math.NormalizeAngle( ang.yaw - prev.yaw ) )
             local dp = math.abs( math.NormalizeAngle( ang.pitch - prev.pitch ) )
-            local speed = math.sqrt( dy * dy + dp * dp ) / dt                 -- degrees per second
-
-            -- peak hold: keep a fast turn "remembered" for about a quarter second
-            local held = ( ply.WAAngSpeed or 0 ) - 400 * dt
-            ply.WAAngSpeed = math.max( speed, held, 0 )
+            speed = math.sqrt( dy * dy + dp * dp ) / dt                       -- degrees per second
         end
 
+        -- the allowance (degrees) follows the turn speed, then fades out over about a quarter second
+        -- (the old version decayed the SPEED by a fixed amount, so a fast flick kept the full +45 degrees for seconds)
         local window = math.min( ply:Ping(), 400 ) / 1000 + 0.15              -- ping + interpolation + think delay
-        ply.WAViewExtra = math.Clamp( ( ply.WAAngSpeed or 0 ) * window, 0, 45 )
+        local cur    = math.Clamp( speed * window, 0, 45 )
+        local held   = ( ply.WAViewExtra or 0 ) - 45 / 0.25 * math.max( dt, 0 )
+        ply.WAViewExtra = math.max( cur, held, 0 )
     end
 end )
 
