@@ -46,14 +46,14 @@ Q menu, Utilities tab, **Weeping Angel > Settings**. Everyone can see the values
 
 - **Smart targeting.** With several players the angel does not stick to the first one it chose. It scores each player by distance, who looked away from it most recently, and who it has not scared lately, and picks the best one. The player who looks away last gets its attention.
 - **Spread out.** Angels avoid piling onto the same victim.
-- **Lag compensation.** The "can see it" cone grows with how fast you are turning and with your ping, so a fast camera turn or a laggy connection never shows the angel mid-move.
+- **Lag compensation.** The "can see it" cone grows with how fast you are turning and with your ping, then shrinks back within a quarter of a second, so a fast camera turn or a laggy connection never shows the angel mid-move.
 - **Dedicated server ready.** A settings panel in the Q menu, with every option also a console variable. Only superadmins can change them, and changes apply instantly.
 
 ### Darkness and light
 
-- **Flashlight blink.** A close angel makes your flashlight blink slowly a few times, then blows it out. It stays dead for 5 seconds. `weepingangel_flashlight_blackout 1` also blacks out the screen with each blink.
+- **Flashlight blink.** A close angel makes your flashlight blink slowly a few times, then blows it out. It stays dead for 2 seconds (`weepingangel_flashlight_block`). `weepingangel_flashlight_blackout 1` also blacks out the screen with each blink.
 - **Light draining.** Nearby lights flicker and blow out.
-- **Darkness (experimental).** An angel standing in the dark cannot be seen, so it moves freely there. Your own flashlight lights up what it points at. Tune `weepingangel_dark_level` per map with the debug overlay on.
+- **Darkness (experimental).** An angel standing in the dark cannot be seen, so it moves freely there. Your own flashlight lights up what it points at, but only inside the beam: the moment the light leaves it, it can move again, even if it is still on your screen. Tune `weepingangel_dark_level` per map with the debug overlay on, and `weepingangel_flashlight_cone` (degrees, 20 by default) to match how wide your beam looks. The lit area also grows as the angel gets closer, because the edge of the beam and your weapon's glow still light things right next to you.
 
 ### Extras you can switch on
 
@@ -93,7 +93,7 @@ Optional. Works with the [TARDIS mod](https://steamcommunity.com/sharedfiles/fil
 ### Doors
 
 - **Open door rule.** With the door open, angels outside only freeze while someone inside is actually looking at the doorway. Someone standing inside with their back to the door does not count as watching. Turn this off with `weepingangel_tardis_door_look`.
-- **Following in.** An angel can only follow you into a TARDIS through a closed door, and not in the first seconds after you step in. This stops it from disappearing when you walk in through an open door.
+- **Following in.** An angel can only follow you into a TARDIS through a closed door, and not in the first seconds after you step in. This stops it from disappearing when you walk in through an open door. While it can't follow, it walks to the door and faces it, not toward the interior.
 - **Grace after leaving.** For 8 seconds after you step out (`weepingangel_tardis_grace`), the angels can still move and scare you, but they cannot touch you.
 
 ## Main console variables
@@ -110,6 +110,7 @@ Optional. Works with the [TARDIS mod](https://steamcommunity.com/sharedfiles/fil
 | `weepingangel_dormant` | 0 | New angels spawn as dormant statues. |
 | `weepingangel_flashlight_drain` | 1 | Angels blink and blow out your flashlight. |
 | `weepingangel_darkness` | 0 | Angels in the dark cannot be seen (experimental). |
+| `weepingangel_flashlight_cone` | 20 | Width of your flashlight's lit area in degrees. Only inside it does the flashlight count as seeing the angel. It widens automatically at close range. |
 | `weepingangel_tardis_shelter` | 1 | 0 = off, 1 = safe with shields on, 2 = safe in any TARDIS. |
 | `weepingangel_tardis_knock` | 1 | An angel at the TARDIS door knocks. |
 | `weepingangel_debug` | 0 | Admin debug overlay above each angel. |
