@@ -1,4 +1,4 @@
-# All console variables
+# All commands and console variables
 
 Set them in the server console or rcon, for example `weepingangel_speed 300`. They are saved automatically. The same options are in the Q menu under Utilities > Weeping Angel > Settings (superadmins can change them).
 
@@ -12,7 +12,7 @@ Set them in the server console or rcon, for example `weepingangel_speed 300`. Th
 | `weepingangel_touch_mode` | 0 | 0 = a touch sends you back in time (teleport). 1 = a touch kills. |
 | `weepingangel_instant_move` | 1 | 1 = the angel moves the moment nobody is looking, with no cooldowns. |
 | `weepingangel_smart_target` | 1 | 1 = with several players, the target is picked by distance, who looked away most recently and who was scared least recently. |
-| `weepingangel_lag_comp` | 1 | 1 = the visibility cone grows with camera turn speed and ping, so you do not see it move during fast turns or lag. |
+| `weepingangel_lag_comp` | 1 | 1 = the visibility cone grows with camera turn speed and ping (and fades back within a quarter of a second), so you do not see it move during fast turns or lag. |
 | `weepingangel_fit_space` | 1 | 1 = teleport distances shrink to the size of the room, and the angel keeps off walls and props. |
 | `weepingangel_max_range` | 4000 | An angel can only teleport to a player within this many units (0 = no limit). |
 
@@ -70,7 +70,7 @@ Set them in the server console or rcon, for example `weepingangel_speed 300`. Th
 | --- | --- | --- |
 | `weepingangel_flashlight_drain` | 1 | 1 = a close angel can make your flashlight blink slowly and then blow it out. |
 | `weepingangel_flashlight_dist` | 450 | How close the angel has to be to start (units). |
-| `weepingangel_flashlight_block` | 5 | Seconds the flashlight stays dead after it is blown out. |
+| `weepingangel_flashlight_block` | 2 | Seconds the flashlight stays dead after it is blown out. |
 | `weepingangel_flashlight_blackout` | 0 | 1 = the whole screen goes black with every blink. |
 
 ## TARDIS mod
@@ -91,6 +91,7 @@ Set them in the server console or rcon, for example `weepingangel_speed 300`. Th
 | `weepingangel_darkness` | 0 | 1 = a player cannot see an angel standing in the dark, so it moves freely there. |
 | `weepingangel_dark_level` | 0.009 | Light level (0 to 1) below which an angel counts as standing in the dark. The debug overlay shows the measured value, so tune it per map. |
 | `weepingangel_dark_flashlight` | 1 | 1 = your flashlight lights up an angel it points at, so you can still see it in the dark. |
+| `weepingangel_flashlight_cone` | 20 | How wide your flashlight lights things, as a half-angle in degrees (10 to 60). The angel counts as lit (seen) only while its body is inside this cone. Raise it if the angel moves while the beam's edge still touches it, lower it if it stays frozen with the light clearly off it. The cone widens by itself as the angel gets closer (about 25 degrees at 180 units, over 60 at 100 units, 110 at 70 units or less), because the beam's edge and your weapon's glow light things right next to you. |
 
 ## Debug
 
